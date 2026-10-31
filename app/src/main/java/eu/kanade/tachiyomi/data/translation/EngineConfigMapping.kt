@@ -56,7 +56,7 @@ object EngineConfigMapping {
             model = prefs.model.get().ifBlank { preset.defaultModel },
             // base 空（自架/自訂未填）→ isReady 已擋；萬一漏 → LlmTranslator 拋例外標 Failed（不靜默）。
             apiBase = chatUrl,
-            toLangName = target,
+            toLangName = llmLangName(target),
             fromLangName = prefs.sourceLangName.get(),
             temperature = temperature,
             // 思考模式（預設關）：欄位形狀 per-provider，由引擎 LlmProviders.requestParams 映射。
@@ -173,6 +173,16 @@ object EngineConfigMapping {
         prefs.fontScale.get(),
         prefs.tateChuYoko.get().toString(),
     )
+
+    /**
+     * The stored pref is a short key ("Arabic"); the LLM gets a fuller instruction so the output
+     * reads like a natural Arabic scanlation rather than a stiff literal translation.
+     */
+    internal fun llmLangName(target: String): String = when (target) {
+        "Arabic" -> "Arabic (Modern Standard Arabic, natural short spoken-style manga dialogue; " +
+            "keep character names and honorifics transliterated)"
+        else -> target
+    }
 
     // 進階數值：存字串、此處 parse + clamp 到值域（超界夾回，不擋存）。
     private fun parseFloat(s: String, lo: Float, hi: Float, d: Float) = s.toFloatOrNull()?.coerceIn(lo, hi) ?: d
