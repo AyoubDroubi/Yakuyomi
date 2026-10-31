@@ -299,7 +299,7 @@ dependencies {
 
     // UI libraries
     implementation(libs.material)
-    implementation(libs.flexibleAdapter)
+    implementation(projects.flexibleAdapter) // vendored, see flexible-adapter/README.md
     implementation(libs.photoView)
     implementation(libs.directionalViewPager) {
         exclude(group = "androidx.viewpager", module = "viewpager")
