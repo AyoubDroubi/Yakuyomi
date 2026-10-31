@@ -119,7 +119,7 @@ public abstract class SelectableAdapter extends RecyclerView.Adapter
             Log.useTag("FlexibleAdapter");
         }
         log = new Logger(Log.customTag);
-        log.i("Running version %s", BuildConfig.VERSION_NAME);
+        log.i("Running version %s", "5.1.0"); // vendored: BuildConfig.VERSION_NAME no longer exists for libraries
         mSelectedPositions = Collections.synchronizedSet(new TreeSet<Integer>());
         mBoundViewHolders = new HashSet<>();
         mMode = IDLE;

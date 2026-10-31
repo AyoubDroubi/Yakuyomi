@@ -6,7 +6,10 @@ version the app previously pulled from JitPack as `com.github.arkon.FlexibleAdap
 
 Vendored because JitPack's build of that commit fails (a build plugin it needs,
 `nu.studer:java-ordered-properties:1.0.1`, is no longer published), so the artifact can no
-longer be downloaded. The only change from upstream is the manifest: the `package` attribute is
-replaced by the Gradle `namespace`, as current Android Gradle Plugin versions require.
+longer be downloaded. Changes from upstream, both required by current Android Gradle Plugin versions:
+
+- the manifest's `package` attribute is replaced by the Gradle `namespace`;
+- `SelectableAdapter` logs the fixed string `"5.1.0"` instead of `BuildConfig.VERSION_NAME`,
+  which AGP no longer generates for library modules.
 
 Licensed under the Apache License 2.0 — see `LICENSE`.
