@@ -5,6 +5,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch: {}  # manual run from the Actions tab
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -44,3 +45,12 @@ jobs:
       # gitignored 的 api-keys / local.properties 缺檔有後備（key→空字串、SDK→ANDROID_HOME），CI 不需提供。
       - name: Build (compile check)
         run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
+
+      # Keep the built APKs so they can be downloaded from the run page (Artifacts section).
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: yakuyomi-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
