@@ -44,7 +44,23 @@ jobs:
       # debug build，不帶 -Pinclude-telemetry / -Penable-updater（免 Firebase/google-services、updater）。
       # gitignored 的 api-keys / local.properties 缺檔有後備（key→空字串、SDK→ANDROID_HOME），CI 不需提供。
       - name: Build (compile check)
-        run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
+        run: |
+          set -o pipefail
+          ./gradlew :app:assembleDebug --no-daemon --stacktrace 2>&1 | tee build.log
+
+      # On failure, surface the compiler/Gradle errors as run annotations so they are readable
+      # from the run summary (and the API) without opening the full log.
+      - name: Report build errors
+        if: failure()
+        run: |
+          [ -f build.log ] || exit 0
+          grep -E '^e: |^w: .*error|error:' build.log | head -10 | while IFS= read -r l; do
+            echo "::error title=Compile error::$(printf '%s' "$l" | sed 's/%/%25/g')"
+          done
+          sed -n '/What went wrong/,/^\* Try/p' build.log | head -40 > wrong.txt || true
+          if [ -s wrong.txt ]; then
+            echo "::error title=Gradle failure::$(sed 's/%/%25/g' wrong.txt | awk '{printf "%s%%0A", $0}')"
+          fi
 
       # Keep the built APKs so they can be downloaded from the run page (Artifacts section).
       - name: Upload APK
