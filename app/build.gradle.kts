@@ -54,6 +54,14 @@ android {
     }
 
     signingConfigs {
+        // Fixed debug key in the repo (not a secret; Android's standard debug passwords) so every
+        // CI debug build has the same signature and installs as an update over the previous one.
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
         if (rootProject.file("keystore.properties").exists()) {
             create("release") {
                 storeFile = file(yakuyomiKeystore.getProperty("storeFile"))

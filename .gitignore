@@ -20,3 +20,5 @@ api-keys.properties
 keystore.properties
 *.jks
 *.keystore
+# Shared debug key (not a secret): keeps CI debug builds installable as updates.
+!app/debug.keystore
