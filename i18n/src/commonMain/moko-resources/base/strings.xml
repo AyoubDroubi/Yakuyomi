@@ -515,6 +515,15 @@
     <string name="pref_translation_lang_portuguese">Portuguese</string>
     <string name="pref_translation_lang_russian">Russian</string>
     <string name="pref_translation_lang_arabic">Arabic</string>
+    <string name="pref_translation_diagnostics">Diagnostics</string>
+    <string name="pref_translation_test_ai">Test AI connection</string>
+    <string name="pref_translation_test_ai_summary">Send a short sample through %1$s with your key, model and language, and show the result or the exact error</string>
+    <string name="pref_translation_testing">Testing…</string>
+    <string name="pref_translation_test_ok">Connection works</string>
+    <string name="pref_translation_test_failed">Connection failed</string>
+    <string name="pref_translation_recent_errors">Recent translation errors</string>
+    <string name="pref_translation_recent_errors_summary">Latest chapter and page failures, newest first</string>
+    <string name="pref_translation_recent_errors_empty">No translation errors recorded.</string>
     <string name="pref_translation_lang_auto_detect">Auto-detect</string>
     <string name="pref_category_tracking">Tracking</string>
     <string name="pref_category_advanced">Advanced</string>

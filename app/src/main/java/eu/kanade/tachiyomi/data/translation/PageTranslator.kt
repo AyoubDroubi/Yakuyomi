@@ -372,7 +372,10 @@ class PageTranslator(private val context: Context) {
             val page = line.substringBefore('\t')
             page !in pendingNames && page in done && PageSizeCap.isTooLargeReason(line.substringAfter('\t', ""))
         }
-        val allErrors = carried + errors.lines().filter { it.isNotBlank() }
+        val newErrors = errors.lines().filter { it.isNotBlank() }
+        val allErrors = carried + newErrors
+        // Also keep this round's failures in the app-wide log shown in Settings › Translation.
+        TranslationDiagnostics.recordChapterErrors(context, chapterDir.parentFile?.name, chapterDir.name, newErrors)
         if (allErrors.isNotEmpty()) {
             overwriteBytes(chapterDir, ERRORS_FILE, allErrors.joinToString("\n", postfix = "\n").toByteArray())
         } else {
@@ -2116,6 +2119,12 @@ class PageTranslator(private val context: Context) {
      * 這行，別頁的行與夜讀行原樣保留。整章佇列下一輪跑完會照它自己的結果整檔重寫。best-effort：失敗只記 log。
      */
     private fun recordSinglePageError(chapterDir: UniFile, pageName: String, reason: String) {
+        TranslationDiagnostics.recordChapterErrors(
+            context,
+            chapterDir.parentFile?.name,
+            chapterDir.name,
+            listOf("$pageName\t$reason"),
+        )
         runCatching {
             val kept = readErrorLines(chapterDir).filterNot { it.startsWith("$pageName\t") }
             overwriteBytes(chapterDir, ERRORS_FILE, (kept + "$pageName\t$reason").joinToString("\n").toByteArray())

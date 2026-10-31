@@ -32,8 +32,10 @@ import eu.kanade.presentation.more.settings.Preference
 import eu.kanade.presentation.more.settings.widget.TriStateListDialog
 import eu.kanade.tachiyomi.data.translation.ModelDownloadManager
 import eu.kanade.tachiyomi.data.translation.TranslationEngineConfig
+import eu.kanade.tachiyomi.data.translation.TranslationDiagnostics
 import eu.kanade.tachiyomi.data.translation.TranslationEngineService
 import eu.kanade.tachiyomi.data.translation.TranslationManager
+import eu.kanade.tachiyomi.util.system.copyToClipboard
 import eu.kanade.tachiyomi.ui.translation.TranslationQuickstartScreen
 import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.collections.immutable.ImmutableMap
@@ -133,6 +135,10 @@ object SettingsTranslationScreen : SearchableSettings {
         val providerName = providerLabel(providerPreset)
         var modelPicker by remember { mutableStateOf<List<String>?>(null) }
         var fetchingModels by remember { mutableStateOf(false) }
+        // Diagnostics: live LLM round-trip test + app-wide log of recent translation failures.
+        var testingAi by remember { mutableStateOf(false) }
+        var aiTestResult by remember { mutableStateOf<TranslationDiagnostics.TestResult?>(null) }
+        var recentErrors by remember { mutableStateOf<List<String>?>(null) }
 
         // 模型自動下載 + 狀態（下載完才重算 modelPresence）。
         val modelDownloadManager = remember { Injekt.get<ModelDownloadManager>() }
@@ -225,6 +231,69 @@ object SettingsTranslationScreen : SearchableSettings {
                 dismissButton = {
                     TextButton(onClick = { pendingEnableSwitch = null }) {
                         Text(text = stringResource(MR.strings.action_cancel))
+                    }
+                },
+            )
+        }
+        aiTestResult?.let { r ->
+            val report = buildString {
+                appendLine("${r.provider} · ${r.model} → ${r.target} · ${r.millis} ms")
+                appendLine()
+                if (r.lines.isNotEmpty()) r.lines.forEach { appendLine(it) }
+                r.error?.let { appendLine(); appendLine("Error: $it") }
+                if (!r.ok) r.raw?.takeIf { it.isNotBlank() }?.let { appendLine(); appendLine("Response: $it") }
+            }.trim()
+            AlertDialog(
+                onDismissRequest = { aiTestResult = null },
+                title = {
+                    Text(
+                        text = stringResource(
+                            if (r.ok) MR.strings.pref_translation_test_ok else MR.strings.pref_translation_test_failed,
+                        ),
+                    )
+                },
+                text = {
+                    LazyColumn(modifier = Modifier.heightIn(max = 420.dp)) {
+                        item { Text(text = report) }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { aiTestResult = null }) { Text(text = stringResource(MR.strings.action_close)) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { context.copyToClipboard("AI test", report) }) {
+                        Text(text = stringResource(MR.strings.action_copy_to_clipboard))
+                    }
+                },
+            )
+        }
+        recentErrors?.let { lines ->
+            AlertDialog(
+                onDismissRequest = { recentErrors = null },
+                title = { Text(text = stringResource(MR.strings.pref_translation_recent_errors)) },
+                text = {
+                    if (lines.isEmpty()) {
+                        Text(text = stringResource(MR.strings.pref_translation_recent_errors_empty))
+                    } else {
+                        LazyColumn(modifier = Modifier.heightIn(max = 460.dp)) {
+                            items(lines) { line -> Text(text = line, modifier = Modifier.padding(vertical = 4.dp)) }
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { recentErrors = null }) { Text(text = stringResource(MR.strings.action_close)) }
+                },
+                dismissButton = {
+                    if (lines.isNotEmpty()) {
+                        TextButton(onClick = { context.copyToClipboard("Translation errors", lines.joinToString("\n")) }) {
+                            Text(text = stringResource(MR.strings.action_copy_to_clipboard))
+                        }
+                        TextButton(
+                            onClick = {
+                                TranslationDiagnostics.clearErrors(context)
+                                recentErrors = emptyList()
+                            },
+                        ) { Text(text = stringResource(MR.strings.action_clear)) }
                     }
                 },
             )
@@ -585,6 +654,33 @@ object SettingsTranslationScreen : SearchableSettings {
                                         modelPicker = list.map { it.id }
                                     }
                                 }
+                            }
+                        },
+                    ),
+                    // Real round-trip with the current provider/key/model/language → result or exact error.
+                    Preference.PreferenceItem.TextPreference(
+                        title = stringResource(MR.strings.pref_translation_test_ai),
+                        subtitle = if (testingAi) {
+                            stringResource(MR.strings.pref_translation_testing)
+                        } else {
+                            stringResource(MR.strings.pref_translation_test_ai_summary, providerName)
+                        },
+                        onClick = {
+                            if (!testingAi) {
+                                scope.launch {
+                                    testingAi = true
+                                    aiTestResult = TranslationDiagnostics.testConnection(prefs)
+                                    testingAi = false
+                                }
+                            }
+                        },
+                    ),
+                    Preference.PreferenceItem.TextPreference(
+                        title = stringResource(MR.strings.pref_translation_recent_errors),
+                        subtitle = stringResource(MR.strings.pref_translation_recent_errors_summary),
+                        onClick = {
+                            scope.launch {
+                                recentErrors = withContext(Dispatchers.IO) { TranslationDiagnostics.recentErrors(context) }
                             }
                         },
                     ),
