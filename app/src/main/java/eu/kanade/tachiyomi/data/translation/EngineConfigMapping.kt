@@ -62,7 +62,11 @@ object EngineConfigMapping {
             // 思考模式（預設關）：欄位形狀 per-provider，由引擎 LlmProviders.requestParams 映射。
             thinking = prefs.thinking.get(),
         )
-        if (target != TranslationPreferences.DEFAULT_TARGET_LANG) {
+        if (target == "Arabic") {
+            // Few-shot for Arabic: shows the <|i|> line format plus the wanted register
+            // (natural spoken-style MSA, short lines, "!?"/"..." kept, names transliterated).
+            translatorCfg = translatorCfg.copy(sampleSource = ARABIC_SAMPLE_SOURCE, sampleTarget = ARABIC_SAMPLE_TARGET)
+        } else if (target != TranslationPreferences.DEFAULT_TARGET_LANG) {
             translatorCfg = translatorCfg.copy(sampleSource = "", sampleTarget = "")
         }
 
@@ -183,6 +187,16 @@ object EngineConfigMapping {
             "keep character names and honorifics transliterated)"
         else -> target
     }
+
+    // Original example lines (written for this project) in the engine's <|i|> protocol.
+    private const val ARABIC_SAMPLE_SOURCE =
+        "<|1|>Wait... you're telling me the gate opened again?!\n" +
+            "<|2|>Min-jun, get behind me. NOW!\n" +
+            "<|3|>Heh. Looks like the weakling finally woke up."
+    private const val ARABIC_SAMPLE_TARGET =
+        "<|1|>لحظة... تقصد أن البوابة فُتحت مجددًا؟!\n" +
+            "<|2|>مين-جون، قف خلفي. حالًا!\n" +
+            "<|3|>هه. يبدو أن الضعيف استيقظ أخيرًا."
 
     // 進階數值：存字串、此處 parse + clamp 到值域（超界夾回，不擋存）。
     private fun parseFloat(s: String, lo: Float, hi: Float, d: Float) = s.toFloatOrNull()?.coerceIn(lo, hi) ?: d

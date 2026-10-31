@@ -205,7 +205,13 @@ class TranslationEngineService(private val context: Context) {
             // 去字法照呼叫端傳入（佇列逐章帶來的去字法），其餘參數（語言/緒數/排版…）照使用者設定。
             val cfg = TranslationEngineConfig.buildEngineConfig(translationPreferences, methodRaw)
             TraceLog.log("svc", "ensureEngine.create.start")
-            val built = Yakuyomi.create(bundle.models, bundle.alphabet, apiKey(), cfg)
+            val built = Yakuyomi.create(
+                bundle.models,
+                bundle.alphabet,
+                apiKey(),
+                cfg,
+                typeface = TranslationFonts.forTarget(context, translationPreferences.targetLangName.get()),
+            )
             TraceLog.log("svc", "ensureEngine.create.done")
             engine = built
             builtSignature = signature
